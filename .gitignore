@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env
+.python-version
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+src/Vegetables/*
+!src/Vegetables/.gitkeep
+src/Recipe_Images/*
+!src/Recipe_Images/.gitkeep
+src/Recipes/*
+!src/Recipes/.gitkeep
+*.db
+*.sqlite3
+*.keras
+*.h5
+src/archive/
+src/naiproject.egg-info/
+src/models/*
+!src/models/.gitkeep
+training_history.png
+saved_model/
+*.pb
+variables/
+uv.lock
+.pre-commit-config.yaml
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
