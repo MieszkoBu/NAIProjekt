@@ -66,3 +66,35 @@ uv.lock
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# PyTorch
+*.pt
+*.pth
+.pytorch_cache/
+
+# Transformers
+.cache/
+.transformers/
+**/cache_dir/
+
+# Model checkpoints
+checkpoints/
+*.ckpt
+*.bin
+
+# Hugging Face
+.huggingface/
+hub/
+
+# Sentence Transformers
+sentence-transformers/
+
+# Dodatkowe pliki cache
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# Model cache
+.cache/
+.transformers/
+models/

@@ -20,6 +20,10 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from PIL import Image, ImageTk
 import tensorflow as tf
 import sys
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from recipe_recommender import RecipeRecommender
+from cuisine_classifier import CuisineClassifier
 
 load_dotenv()
 
@@ -28,25 +32,23 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 recipe_history: Dict[str, List[str]] = {}
 
 possible_model_paths = [
-    os.path.join("src", "models", "trained_model.keras")  # Używamy tylko jednej, pewnej ścieżki
+    os.path.join("src", "models", "trained_model.keras")  
 ]
 
 model = None
 for model_path in possible_model_paths:
     try:
         print(f"Próba załadowania modelu z: {os.path.abspath(model_path)}")
-        # Dodajemy dodatkowe opcje ładowania
         model = tf.keras.models.load_model(
             model_path,
             compile=False,
-            safe_mode=False,  # Wyłączamy tryb bezpieczny
-            custom_objects=None  # Pozwalamy na automatyczne wykrycie obiektów
+            safe_mode=False,  
+            custom_objects=None 
         )
         print(f"Sukces! Model załadowany z: {model_path}")
         break
     except Exception as e:
         print(f"Nie udało się załadować modelu z {model_path}: {e}")
-        # Dodajemy więcej szczegółów o błędzie
         import traceback
         traceback.print_exc()
 
@@ -264,6 +266,57 @@ def parse_nutrition(text: str) -> Dict[str, float]:
     return nutrition
 
 
+def create_recipe_features(recipe_text: str) -> str:
+    """Przygotuj tekst przepisu do analizy podobieństwa."""
+    ingredients = recipe_text.split("📝 SKŁADNIKI:")[1].split("👨‍🍳")[0].lower()
+    instructions = recipe_text.split("👨‍🍳 INSTRUKCJE:")[1].lower()
+    
+    return f"{ingredients} {instructions}"
+
+
+def train_recommendation_model() -> Tuple[TfidfVectorizer, np.ndarray, List[Dict[str, Any]]]:
+    """Trenuj model rekomendacji na podstawie historii przepisów."""
+    recipes = get_recipe_history()
+    
+    if not recipes:
+        return None, None, []
+    
+    recipe_texts = [create_recipe_features(recipe["instructions"]) for recipe in recipes]
+    
+    vectorizer = TfidfVectorizer(
+        max_features=1000,
+        stop_words=['i', 'w', 'na', 'do', 'z', 'ze', 'oraz'] 
+    )
+    recipe_vectors = vectorizer.fit_transform(recipe_texts)
+    
+    return vectorizer, recipe_vectors.toarray(), recipes
+
+
+def get_similar_recipes(
+    recipe_id: int, 
+    n_recommendations: int = 3
+) -> List[Dict[str, Any]]:
+    """Znajdź podobne przepisy do danego przepisu."""
+    vectorizer, recipe_vectors, recipes = train_recommendation_model()
+    
+    if vectorizer is None or len(recipes) < 2:
+        return []
+    
+    current_recipe_idx = next(
+        (i for i, r in enumerate(recipes) if r["id"] == recipe_id), 
+        None
+    )
+    
+    if current_recipe_idx is None:
+        return []
+    
+    similarities = cosine_similarity([recipe_vectors[current_recipe_idx]], recipe_vectors)[0]
+    
+    similar_indices = similarities.argsort()[::-1][1:n_recommendations+1]
+    
+    return [recipes[i] for i in similar_indices]
+
+
 class RecipeApp(tk.Tk):
     """Główne okno aplikacji."""
 
@@ -275,6 +328,8 @@ class RecipeApp(tk.Tk):
         self.ingredient = ingredient
         self.parent = parent
         self.recipe_id = recipe_id
+
+        self.cuisine_classifier = CuisineClassifier()
 
         window_width = 800
         window_height = 600
@@ -329,6 +384,24 @@ class RecipeApp(tk.Tk):
             button_frame, text="Eksportuj do PDF", command=self.export_to_pdf, width=20, height=2
         )
         self.export_btn.pack(side="left", padx=5)
+
+        self.recommend_btn = tk.Button(
+            button_frame, 
+            text="Podobne przepisy", 
+            command=self.show_recommendations,
+            width=20, 
+            height=2
+        )
+        self.recommend_btn.pack(side="left", padx=5)
+
+        self.cuisine_btn = tk.Button(
+            button_frame,
+            text="Typ kuchni",
+            command=self.show_cuisine_type,
+            width=20,
+            height=2
+        )
+        self.cuisine_btn.pack(side="left", padx=5)
 
         rating_frame = tk.Frame(main_frame)
         rating_frame.pack(fill="x", pady=5)
@@ -473,12 +546,162 @@ class RecipeApp(tk.Tk):
         rating = int(self.rating_var.get())
         update_recipe_rating(self.recipe_id, rating)
 
+    def show_recommendations(self) -> None:
+        """Pokaż podobne przepisy."""
+        recipes = get_recipe_history()
+        
+        if len(recipes) < 2:
+            tk.messagebox.showinfo(
+                "Informacja",
+                "Potrzebujesz przynajmniej dwóch przepisów w historii, aby zobaczyć rekomendacje!"
+            )
+            return
+        
+        similarity_dialog = tk.Toplevel(self)
+        similarity_dialog.title("Wybierz stopień podobieństwa")
+        similarity_dialog.geometry("300x200")
+        
+        tk.Label(
+            similarity_dialog,
+            text="Wybierz stopień podobieństwa (0-10):\n0 - luźno powiązane\n10 - bardzo podobne",
+            justify=tk.LEFT
+        ).pack(pady=10)
+        
+        similarity_var = tk.StringVar(value="5")
+        scale = tk.Scale(
+            similarity_dialog,
+            from_=0,
+            to=10,
+            orient=tk.HORIZONTAL,
+            variable=similarity_var
+        )
+        scale.pack(fill='x', padx=20)
+        
+        search_btn = tk.Button(
+            similarity_dialog,
+            text="Szukaj",
+            command=lambda: on_confirm(),
+            width=15,
+            height=2
+        )
+        search_btn.pack(pady=20)
+        
+        def on_confirm():
+            similarity_threshold = float(similarity_var.get()) / 10.0
+            similarity_dialog.destroy()
+            
+            print(f"Znaleziono {len(recipes)} przepisów w historii")
+            print(f"Szukam podobnych do przepisu o ID: {self.recipe_id}")
+            print(f"Próg podobieństwa: {similarity_threshold}")
+            
+            recipe_recommender = RecipeRecommender()
+            similar_recipes = recipe_recommender(
+                self.recipe_id,
+                recipes,
+                similarity_threshold=similarity_threshold
+            )
+            
+            if not similar_recipes:
+                tk.messagebox.showinfo(
+                    "Informacja",
+                    f"Nie znaleziono przepisów o podobieństwie >= {similarity_threshold*10}/10.\n"
+                    f"Spróbuj zmniejszyć próg podobieństwa."
+                )
+                return
+            
+            recommend_window = tk.Toplevel(self)
+            recommend_window.title("Podobne przepisy")
+            recommend_window.geometry("600x400")
+            
+            screen_width = recommend_window.winfo_screenwidth()
+            screen_height = recommend_window.winfo_screenheight()
+            center_x = int(screen_width / 2 - 600 / 2)
+            center_y = int(screen_height / 2 - 400 / 2)
+            recommend_window.geometry(f"600x400+{center_x}+{center_y}")
+            
+            tree = ttk.Treeview(
+                recommend_window, 
+                columns=("Nazwa", "Składnik", "Podobieństwo"),
+                show="headings"
+            )
+            
+            tree.heading("Nazwa", text="Nazwa przepisu")
+            tree.heading("Składnik", text="Główny składnik")
+            tree.heading("Podobieństwo", text="Podobieństwo")
+            
+            tree.column("Nazwa", width=250)
+            tree.column("Składnik", width=150)
+            tree.column("Podobieństwo", width=100)
+            
+            for recipe in similar_recipes:
+                tree.insert(
+                    "", 
+                    "end",
+                    values=(
+                        recipe["recipe_name"],
+                        recipe["ingredient"],
+                        "★★★★★"[:int(recipe.get("similarity", 3))]
+                    )
+                )
+
+            tree.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            def on_select(event):
+                """Obsługa wyboru przepisu."""
+                selected_item = tree.selection()[0]
+                recipe_data = similar_recipes[tree.index(selected_item)]
+                
+                new_recipe_window = RecipeApp(
+                    self,
+                    recipe_data["instructions"],
+                    recipe_data["ingredient"],
+                    recipe_data["id"]
+                )
+                
+                recommend_window.destroy()
+                
+            tree.bind("<Double-1>", on_select)
+
+    def show_cuisine_type(self) -> None:
+        """Pokaż typ kuchni dla przepisu."""
+        predictions = self.cuisine_classifier.predict_cuisine(self.recipe)
+        
+        cuisine_window = tk.Toplevel(self)
+        cuisine_window.title("Klasyfikacja typu kuchni")
+        cuisine_window.geometry("400x300")
+        
+        tk.Label(
+            cuisine_window,
+            text="Prawdopodobieństwo typu kuchni:",
+            font=("Arial", 12, "bold")
+        ).pack(pady=10)
+        
+        for cuisine, prob in predictions[:3]:
+            percentage = f"{prob * 100:.1f}%"
+            tk.Label(
+                cuisine_window,
+                text=f"{cuisine.title()}: {percentage}",
+                font=("Arial", 11)
+            ).pack(pady=5)
+
 
 def save_to_database(recipe: Dict[str, Any]) -> Optional[int]:
     """Zapisz przepis i wyniki rozpoznawania do bazy danych."""
     conn = sqlite3.connect("recipes.db")
     cursor = conn.cursor()
     try:
+        cursor.execute(
+            """
+            SELECT id FROM recipes 
+            WHERE ingredient = ? AND recipe_name = ? AND instructions = ?
+        """,
+            (recipe["ingredient"], recipe["name"], recipe["instructions"]),
+        )
+        existing_recipe = cursor.fetchone()
+        
+        if existing_recipe:
+            return existing_recipe[0]  
+            
         cursor.execute(
             """
             INSERT INTO recipes (ingredient, recipe_name, instructions, nutrition)
@@ -489,6 +712,22 @@ def save_to_database(recipe: Dict[str, Any]) -> Optional[int]:
         recipe_id = cursor.lastrowid
         conn.commit()
         return recipe_id if recipe_id is not None else 0
+    finally:
+        conn.close()
+
+
+def delete_recipe(recipe_id: int) -> bool:
+    """Usuń przepis z bazy danych."""
+    conn = sqlite3.connect("recipes.db")
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
+        cursor.execute("DELETE FROM search_history WHERE recipe_id = ?", (recipe_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Błąd podczas usuwania przepisu: {e}")
+        return False
     finally:
         conn.close()
 
@@ -683,7 +922,7 @@ class MainWindow(tk.Tk):
         self.model = model
         self.class_labels = class_labels
         self.image_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
-        self.recipes_folder = os.path.join(os.getcwd(), "Recipes")
+        self.recipes_folder = os.path.join(os.getcwd(), "src", "Recipes")
 
         window_width = 400
         window_height = 300
@@ -732,14 +971,10 @@ class MainWindow(tk.Tk):
             tk.messagebox.showwarning("Uwaga", "Brak zdjęć w katalogu!")
             return None
 
-        filename = self.image_files[0]
-        image_path = os.path.join(self.directory, filename)
-        ingredient = recognize_ingredient(image_path, self.model, self.class_labels)
-
         img_window = tk.Toplevel(self)
-        img_window.title(f"Rozpoznany składnik: {ingredient}")
+        img_window.title("Wybierz zdjęcie składnika")
 
-        window_width = 500
+        window_width = 800
         window_height = 600
         screen_width = img_window.winfo_screenwidth()
         screen_height = img_window.winfo_screenheight()
@@ -747,71 +982,111 @@ class MainWindow(tk.Tk):
         center_y = int(screen_height / 2 - window_height / 2)
         img_window.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
 
-        try:
-            img = Image.open(image_path)
-            if img.mode != "RGB":
-                img = img.convert("RGB")
+        nav_frame = tk.Frame(img_window)
+        nav_frame.pack(pady=10)
 
-            max_size = (400, 400)
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        self.current_index = 0
+        self.photos = []  
 
-            self.current_photo = ImageTk.PhotoImage(img)
+        def show_image(index: int) -> None:
+            """Wyświetl wybrane zdjęcie."""
+            if 0 <= index < len(self.image_files):
+                self.current_index = index
+                filename = self.image_files[index]
+                image_path = os.path.join(self.directory, filename)
+                
+                try:
+                    img = Image.open(image_path)
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
 
-            if self.current_photo is not None:
-                img_label = tk.Label(img_window, image=self.current_photo)
-                img_label.pack(padx=10, pady=10)
+                    max_size = (400, 400)
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-            label_text = f"Rozpoznany składnik: {ingredient}"
-            tk.Label(img_window, text=label_text, font=("Arial", 12, "bold")).pack(pady=10)
+                    photo = ImageTk.PhotoImage(img)
+                    self.photos.clear()  
+                    self.photos.append(photo)
+                    
+                    img_label.configure(image=photo)
+                    
+                    ingredient = recognize_ingredient(image_path, self.model, self.class_labels)
+                    ingredient_label.config(text=f"Rozpoznany składnik: {ingredient}")
+                    
+                    prev_btn.config(state=tk.NORMAL if index > 0 else tk.DISABLED)
+                    next_btn.config(state=tk.NORMAL if index < len(self.image_files) - 1 else tk.DISABLED)
+                    
+                    self.current_image_path = image_path
+                    self.current_ingredient = ingredient
+                    
+                except Exception as e:
+                    print(f"Błąd podczas wyświetlania obrazu: {e}")
 
-            def show_recipe_dialog() -> None:
-                """Pokaż dialog wyboru przepisu."""
-                dialog = IngredientDialog(img_window, ingredient)
+        def next_image() -> None:
+            """Pokaż następne zdjęcie."""
+            show_image(self.current_index + 1)
 
-                if dialog.result:
-                    recipe_type, custom_prompt = dialog.result
+        def prev_image() -> None:
+            """Pokaż poprzednie zdjęcie."""
+            show_image(self.current_index - 1)
 
-                    if recipe_type == "custom":
-                        recipe = search_recipe_with_gpt(ingredient, previous_recipes=None, custom_prompt=custom_prompt)
-                    else:
-                        recipe = search_recipe_with_gpt(ingredient, recipe_history.get(ingredient, []))
+        prev_btn = tk.Button(nav_frame, text="← Poprzednie", command=prev_image)
+        prev_btn.pack(side=tk.LEFT, padx=5)
+        
+        next_btn = tk.Button(nav_frame, text="Następne →", command=next_image)
+        next_btn.pack(side=tk.LEFT, padx=5)
 
-                    recipe_path = save_recipe_to_file(ingredient, recipe, self.recipes_folder)
-                    print(f"Przepis zapisany w: {recipe_path}")
+        img_label = tk.Label(img_window)
+        img_label.pack(padx=10, pady=10)
 
-                    img_window.destroy()
+        ingredient_label = tk.Label(img_window, text="", font=("Arial", 12, "bold"))
+        ingredient_label.pack(pady=10)
 
-                    recipe_id = save_to_database(
-                        {
-                            "ingredient": ingredient,
-                            "name": recipe.split("🍳 NAZWA DANIA:")[1].split("📝")[0].strip(),
-                            "instructions": recipe,
-                            "nutrition": str(analyze_nutrition(recipe.split("📝 SKŁADNIKI:")[1].split("👨‍🍳")[0])),
-                        }
-                    )
+        def show_recipe_dialog() -> None:
+            """Pokaż dialog wyboru przepisu."""
+            dialog = IngredientDialog(img_window, self.current_ingredient)
 
-                    if recipe_id is not None:
-                        self.recipe_window = RecipeApp(self, recipe, ingredient, recipe_id)
-                    else:
-                        tk.messagebox.showerror("Błąd", "Nie udało się zapisać przepisu do bazy danych")
+            if dialog.result:
+                recipe_type, custom_prompt = dialog.result
 
-                    def on_recipe_close() -> None:
-                        """Zamknij okno przepisu."""
-                        if self.recipe_window is not None:
-                            self.recipe_window.destroy()
-                            self.recipe_window = None
-                        self.deiconify()
+                if recipe_type == "custom":
+                    recipe = search_recipe_with_gpt(self.current_ingredient, previous_recipes=None, custom_prompt=custom_prompt)
+                else:
+                    recipe = search_recipe_with_gpt(self.current_ingredient, recipe_history.get(self.current_ingredient, []))
 
-                    self.recipe_window.protocol("WM_DELETE_WINDOW", on_recipe_close)
+                recipe_path = save_recipe_to_file(self.current_ingredient, recipe, self.recipes_folder)
+                print(f"Przepis zapisany w: {recipe_path}")
 
-            tk.Button(img_window, text="Dalej", command=show_recipe_dialog, width=20, height=2).pack(pady=10)
+                img_window.destroy()
 
-            return img_window
+                recipe_id = save_to_database(
+                    {
+                        "ingredient": self.current_ingredient,
+                        "name": recipe.split("🍳 NAZWA DANIA:")[1].split("📝")[0].strip(),
+                        "instructions": recipe,
+                        "nutrition": str(analyze_nutrition(recipe.split("📝 SKŁADNIKI:")[1].split("👨‍🍳")[0])),
+                    }
+                )
 
-        except Exception as e:
-            print(f"Błąd podczas wyświetlania obrazu: {e}")
-            img_window.destroy()
-            return None
+                if recipe_id is not None:
+                    self.recipe_window = RecipeApp(self, recipe, self.current_ingredient, recipe_id)
+                else:
+                    tk.messagebox.showerror("Błąd", "Nie udało się zapisać przepisu do bazy danych")
+
+                def on_recipe_close() -> None:
+                    """Zamknij okno przepisu."""
+                    if self.recipe_window is not None:
+                        self.recipe_window.destroy()
+                        self.recipe_window = None
+                    self.deiconify()
+
+                self.recipe_window.protocol("WM_DELETE_WINDOW", on_recipe_close)
+
+        generate_btn = tk.Button(img_window, text="Generuj przepis", command=show_recipe_dialog, width=20, height=2)
+        generate_btn.pack(pady=10)
+
+        show_image(0)
+
+        return img_window
 
     def show_recipe_history(self) -> None:
         """Pokaż historię przepisów."""
@@ -823,6 +1098,33 @@ class MainWindow(tk.Tk):
 
         history = get_recipe_history()
 
+        button_frame = tk.Frame(history_window)
+        button_frame.pack(fill="x", padx=10, pady=5)
+
+        def delete_selected() -> None:
+            """Usuń wybrane przepisy."""
+            selected_items = tree.selection()
+            if not selected_items:
+                tk.messagebox.showwarning("Uwaga", "Wybierz przepisy do usunięcia")
+                return
+
+            if tk.messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz usunąć wybrane przepisy?"):
+                for item in selected_items:
+                    recipe = history[tree.index(item)]
+                    if delete_recipe(recipe["id"]):
+                        tree.delete(item)
+                        history.remove(recipe)
+                tk.messagebox.showinfo("Sukces", "Wybrane przepisy zostały usunięte")
+
+        delete_btn = tk.Button(
+            button_frame, 
+            text="Usuń wybrane przepisy", 
+            command=delete_selected,
+            bg="red",
+            fg="white"
+        )
+        delete_btn.pack(side="left", padx=5)
+
         tree = ttk.Treeview(history_window, columns=("Data", "Składnik", "Nazwa", "Ocena"))
         tree.column("Data", width=200)
         tree.column("Składnik", width=200)
@@ -833,6 +1135,8 @@ class MainWindow(tk.Tk):
         tree.heading("Składnik", text="Składnik")
         tree.heading("Nazwa", text="Nazwa przepisu")
         tree.heading("Ocena", text="Ocena")
+
+        tree.configure(selectmode="extended")
 
         screen_width = history_window.winfo_screenwidth()
         screen_height = history_window.winfo_screenheight()

@@ -4,15 +4,75 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 
 ## 🌟 Funkcjonalności
 
-- Rozpoznawanie składników ze zdjęć przy użyciu modelu AI
-- Generowanie przepisów z wykorzystaniem GPT-3.5
-- Możliwość tworzenia spersonalizowanych przepisów
-- Analiza wartości odżywczych
-- Sprawdzanie zgodności z różnymi dietami
-- Skalowanie liczby porcji
-- Generowanie wariantów przepisu (zdrowsze, szybsze, budżetowe)
-- Historia przepisów z możliwością oceniania
-- Eksport przepisów do PDF
+1. **Rozpoznawanie składników** 
+   - Model CNN do klasyfikacji zdjęć składników
+   - Obsługa 36 różnych kategorii składników
+   - Możliwość przeglądania i wyboru zdjęć
+
+2. **Generowanie przepisów**
+   - Wykorzystanie OpenAI GPT do generowania przepisów
+   - Dostosowanie do polskich składników i preferencji
+   - Generowanie różnych wariantów przepisu
+
+3. **Rekomendacje przepisów**
+   - Model Sentence Transformers do znajdowania podobnych przepisów
+   - Możliwość dostosowania progu podobieństwa
+   - Wyświetlanie top 3 najbardziej podobnych przepisów
+
+4. **Klasyfikacja typu kuchni**
+   - Model XLM-RoBERTa do klasyfikacji typu kuchni
+   - Rozpoznawanie 8 różnych typów kuchni
+   - Wyświetlanie prawdopodobieństwa dla każdego typu
+
+5. **Dodatkowe funkcje**
+   - Analiza wartości odżywczych
+   - Eksport przepisów do PDF
+   - Historia przepisów z ocenami
+   - Dostosowanie liczby porcji
+   - Sprawdzanie diet
+
+## 📱 Przykłady użycia
+
+### Rozpoznawanie składników
+![Rozpoznawanie składników](images/image.png)
+*Okno rozpoznawania składników ze zdjęcia*
+
+### Główne okno przepisu
+![Główne okno](images/image2.png)
+*Wygenerowany przepis z opcjami*
+
+### Klasyfikacja typu kuchni
+![Klasyfikacja kuchni](images/image3.png)
+*Okno z klasyfikacją typu kuchni*
+
+### Historia przepisów
+![Historia](images/image4.png)
+*Okno historii przepisów*
+
+## 💻 Wymagania
+
+- Python 3.10+
+- Tensorflow 2.13+
+- PyTorch 2.1+
+- Transformers 4.35+
+- Pozostałe zależności w `pyproject.toml`
+
+## 🧠 Modele AI
+
+### 1. Model rozpoznawania składników (CNN)
+- Architektura: MobileNetV2
+- Dokładność: 96.48%
+- Obsługiwane składniki: 36 kategorii
+
+### 2. Model rekomendacji (Sentence Transformers)
+- Model: paraphrase-multilingual-MiniLM-L12-v2
+- Funkcje: znajdowanie podobnych przepisów
+- Język: wielojęzyczny (w tym polski)
+
+### 3. Model klasyfikacji kuchni (XLM-RoBERTa)
+- Model: xlm-roberta-base
+- Klasyfikowane kuchnie: polska, włoska, azjatycka, meksykańska, francuska, śródziemnomorska, indyjska, amerykańska
+- Dokładność: wielojęzyczna analiza tekstu
 
 ## 🚀 Instalacja
 
@@ -43,6 +103,7 @@ pip install -e .
 5. Utwórz plik `.env` w głównym katalogu projektu i dodaj klucz API OpenAI:
 ```
 OPENAI_API_KEY=twoj-klucz-api
+TOKENIZERS_PARALLELISM=true
 ```
 
 6. Pobierz model:
@@ -80,34 +141,46 @@ python main.py
 - **Eksport do PDF**: Zapisuje przepis w formacie PDF z formatowaniem
 - **Historia przepisów**: Przeglądaj i oceniaj wcześniej wygenerowane przepisy
 
-## 🔧 Wymagania systemowe
+## ❓ FAQ
 
-- Python 3.10 lub nowszy
-- Git LFS
-- Dostęp do internetu (dla API OpenAI)
-- Minimum 2GB RAM
-- Około 500MB miejsca na dysku
+### Jak dodać własne zdjęcia składników?
+Umieść zdjęcia w formacie JPG/PNG w katalogu `Vegetables/`. Minimalna rozdzielczość to 150x150 pikseli.
+
+### Jak wytrenować własny model?
+1. Pobierz dataset z [Kaggle](https://www.kaggle.com/datasets/kritikseth/fruit-and-vegetable-image-recognition)
+2. Umieść dane w katalogu `archive/`
+3. Uruchom `python train.py`
+
+### Jakie są wymagania sprzętowe?
+- RAM: minimum 8GB
+- GPU: opcjonalnie (przyspiesza działanie)
+- Dysk: około 2GB wolnego miejsca
 
 ## 📝 Struktura projektu
 
-- `main.py` - Główny plik programu
-- `train.py` - Skrypt do trenowania modelu
-- `test.py` - Skrypt do testowania modelu
-- `models/` - Katalog na pliki modelu
-- `Recipes/` - Katalog na wygenerowane przepisy
-- `Vegetables/` - Katalog na zdjęcia składników
-- `archive/` - Katalog na dane treningowe
-  - `train/` - Zdjęcia do treningu
-  - `validation/` - Zdjęcia do walidacji
-  - `test/` - Zdjęcia do testów
+```
+NAIProjekt/
+├── main.py                 # Główny plik aplikacji
+├── recipe_recommender.py   # Model rekomendacji przepisów
+├── cuisine_classifier.py   # Model klasyfikacji typu kuchni
+├── src/
+│   ├── models/            # Zapisane modele
+│   ├── Recipes/           # Wygenerowane przepisy
+│   └── Vegetables/        # Zdjęcia składników
+└── tests/                 # Testy jednostkowe
+```
 
-## 🤝 Współpraca
+## 👏 Podziękowania
 
-1. Zrób fork repozytorium
-2. Utwórz nową gałąź (`git checkout -b feature/nazwa`)
-3. Zatwierdź zmiany (`git commit -am 'Dodano nową funkcję'`)
-4. Wypchnij gałąź (`git push origin feature/nazwa`)
-5. Utwórz Pull Request
+- OpenAI za model GPT
+- Hugging Face za modele transformers
+- Kaggle za dataset treningowy
+- Społeczność open source za wykorzystane biblioteki
+
+## 📫 Kontakt
+
+- GitHub: [MieszkoBu](https://github.com/MieszkoBu)
+- Email: mieszkobu@wp.pl
 
 ## 📄 Licencja
 
@@ -122,77 +195,5 @@ Ten projekt jest objęty licencją MIT - szczegóły w pliku [LICENSE](LICENSE)
 ## 🙋‍♂️ Wsparcie
 
 W razie problemów:
-1. Sprawdź sekcję [Issues](https://github.com/twoj-username/NAIProjekt/issues)
+1. Sprawdź sekcję [Issues](https://github.com/MieszkoBu/NAIProjekt/issues)
 2. Utwórz nowe zgłoszenie z dokładnym opisem problemu
-
-## 🤖 Model AI
-
-### Opcja 1: Pobranie wytrenowanego modelu
-
-1. Pobierz wytrenowany model z [Google Drive](https://drive.google.com/drive/folders/1MobjEblArzMQ2FGiFK2UGwITGrcN5ERs?usp=sharing)
-2. Umieść plik `trained_model.keras` w katalogu `models/`
-3. Pobierz zbiór danych treningowych z [kaggle](https://www.kaggle.com/datasets/kritikseth/fruit-and-vegetable-image-recognition)
-4. Rozpakuj archiwum do katalogu `src/`
-5. Uruchom program:
-```bash
-python main.py
-```
-
-### Opcja 2: Trenowanie własnego modelu
-
-Model wykorzystuje architekturę MobileNetV2 z transfer learningiem.
-
-1. Pobierz zbiór danych treningowych (Użyłem [tego zbioru danych](https://www.kaggle.com/datasets/kritikseth/fruit-and-vegetable-image-recognition), ale możesz użyć dowolnego innego)
-2. Rozpakuj archiwum do katalogu `src/`
-3. Uruchom skrypt trenujący:
-```bash
-python train.py
-```
-
-#### Szczegóły modelu:
-- Model bazowy: MobileNetV2 (pre-trained na ImageNet)
-- Liczba klas: 36 składników
-- Dokładność na zbiorze testowym: 96.48%
-
-#### Parametry treningu:
-- Batch size: 128
-- Epochs: 100 (z early stopping)
-- Optimizer: Adam
-- Learning rate: adaptacyjny
-- Data augmentation:
-  - Rotacja: ±30°
-  - Przesunięcia: ±20%
-  - Zoom: ±20%
-  - Odbicia poziome
-
-#### Dataset:
-- Liczba obrazów treningowych: 3115
-- Liczba obrazów walidacyjnych: 351
-- Liczba obrazów testowych: 359
-
-#### Struktura danych treningowych:
-```
-archive/
-├── train/
-│   ├── apple/
-│   ├── banana/
-│   └── ...
-├── validation/
-│   ├── apple/
-│   ├── banana/
-│   └── ...
-└── test/
-    ├── apple/
-    ├── banana/
-    └── ...
-```
-
-#### Monitorowanie treningu:
-- Postęp treningu jest zapisywany w pliku `training_history.png`
-- Najlepszy model jest automatycznie zapisywany w `models/trained_model.keras`
-- Metryki treningu są wyświetlane w czasie rzeczywistym
-
-#### Wymagania sprzętowe do treningu:
-- Minimum 8GB RAM
-- GPU z minimum 4GB VRAM (opcjonalnie, ale zalecane)
-- Około 2GB wolnego miejsca na dysku
