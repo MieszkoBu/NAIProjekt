@@ -27,11 +27,6 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 
 ## 💻 Wymagania
 
-- Python 3.10+
-- Tensorflow 2.13+
-- PyTorch 2.1+
-- Transformers 4.35+
-- Pozostałe zależności w `pyproject.toml`
 - Klucz API OpenAI (w pliku `.env`)
 
 
