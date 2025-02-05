@@ -129,7 +129,7 @@ dev = [
 name = "ai-recipe-generator"
 version = "0.1.0"
 description = "Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Mieszko Buczkowski <mieszkobu@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
