@@ -13,20 +13,17 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 ## 📱 Przykłady użycia
 
 ### Rozpoznawanie składników
-![Rozpoznawanie składników](images/image.png)
-*Okno rozpoznawania składników ze zdjęcia*
+![Rozpoznawanie składników](images/image1.png)
+
 
 ### Główne okno przepisu
 ![Główne okno](images/image2.png)
-*Wygenerowany przepis z opcjami*
 
 ### Klasyfikacja typu kuchni
 ![Klasyfikacja kuchni](images/image3.png)
-*Okno z klasyfikacją typu kuchni*
 
 ### Historia przepisów
 ![Historia](images/image4.png)
-*Okno historii przepisów*
 
 ## 💻 Wymagania
 

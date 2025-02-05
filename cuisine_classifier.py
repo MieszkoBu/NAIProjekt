@@ -14,7 +14,11 @@ class CuisineClassifier:
         self.classifier = pipeline(
             "text-classification",
             model="papluca/xlm-roberta-base-language-detection",
+<<<<<<< HEAD
             top_k=None  
+=======
+            top_k=None 
+>>>>>>> d83d89e945e848d9ae88593f4a46cecaa32fcbbf
         )
 
     def predict_cuisine(self, recipe_text: str) -> List[Tuple[str, float]]:
@@ -23,7 +27,11 @@ class CuisineClassifier:
             result = self.classifier(recipe_text)
             
             predictions = []
+<<<<<<< HEAD
             for item in result[0]: 
+=======
+            for item in result[0]:  
+>>>>>>> d83d89e945e848d9ae88593f4a46cecaa32fcbbf
                 cuisine_type = self.map_language_to_cuisine(item['label'])
                 score = float(item['score'])
                 predictions.append((cuisine_type, score))
