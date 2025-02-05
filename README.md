@@ -73,7 +73,7 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 
 1. Sklonuj repozytorium:
 ```bash
-git clone https://github.com/twoj-username/NAIProjekt.git
+git clone https://github.com/MieszkoBu/NAIProjekt.git
 cd NAIProjekt
 ```
 
@@ -159,7 +159,22 @@ Umieść zdjęcia w formacie JPG/PNG w katalogu `Vegetables/`. Minimalna rozdzie
 ### Jak wytrenować własny model?
 1. Pobierz dataset z [Kaggle](https://www.kaggle.com/datasets/kritikseth/fruit-and-vegetable-image-recognition)
 2. Umieść dane w katalogu `archive/`
-3. Uruchom `python train.py`
+3. Wytrenuj wybrane modele:
+   ```bash
+   # Trenowanie MobileNetV2
+   python train.py
+   
+   # Trenowanie ResNet50
+   python train_resnet.py
+   
+   # Trenowanie EfficientNetB0
+   python train_efficientnet.py
+   ```
+
+   Modele zostaną zapisane w katalogu `src/models/` jako:
+   - `trained_model.keras` (MobileNetV2)
+   - `trained_model_resnet.keras` (ResNet50)
+   - `trained_model_efficientnet.keras` (EfficientNetB0)
 
 ### Jakie są wymagania sprzętowe?
 - RAM: minimum 8GB
