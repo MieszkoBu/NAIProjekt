@@ -34,6 +34,42 @@ env/
 *.swo
 
 # Project specific
+reports/
+src/models/*.keras
+src/models/*.h5
+src/archive/
+*.log
+*.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# System
+.DS_Store
+Thumbs.db
+
+# TensorFlow/Keras
+*.keras
+*.h5
+checkpoint
+*.ckpt.*
+*.pb
+*.pbtxt
+
+# Data
+*.csv
+*.json
+*.jpg
+*.jpeg
+*.png
+!docs/*.png
+!examples/*.png
+
+# Documentation
+docs/_build/
+
+# Project specific
 src/Vegetables/*
 !src/Vegetables/.gitkeep
 src/Recipe_Images/*
