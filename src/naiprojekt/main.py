@@ -22,9 +22,9 @@ import tensorflow as tf
 import sys
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from recipe_recommender import RecipeRecommender
+from naiprojekt.recipe_recommender import RecipeRecommender
 from cuisine_classifier import CuisineClassifier
-from model_selector import ModelSelector
+from naiprojekt.model_selector import ModelSelector
 
 load_dotenv()
 
