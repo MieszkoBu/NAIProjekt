@@ -24,6 +24,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from recipe_recommender import RecipeRecommender
 from cuisine_classifier import CuisineClassifier
+from model_selector import ModelSelector
 
 load_dotenv()
 
@@ -32,19 +33,35 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 recipe_history: Dict[str, List[str]] = {}
 
 possible_model_paths = [
-    os.path.join("src", "models", "trained_model.keras")  
+    os.path.join("src", "models", "trained_model_resnet.keras"),  # Model ResNet
+    os.path.join("src", "models", "trained_model_efficientnet.keras"),  # Model EfficientNet
+    os.path.join("src", "models", "trained_model.keras"),  # Model MobileNet
 ]
+
+def create_resnet_model():
+    """Odtwórz architekturę modelu ResNet50."""
+    base_model = tf.keras.applications.ResNet50(
+        weights='imagenet',
+        include_top=False,
+        input_shape=(150, 150, 3)
+    )
+    
+    x = base_model.output
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dense(2048, activation='relu')(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    x = tf.keras.layers.Dense(1024, activation='relu')(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+    predictions = tf.keras.layers.Dense(36, activation='softmax')(x)  # 36 klas
+    
+    model = tf.keras.models.Model(inputs=base_model.input, outputs=predictions)
+    return model
 
 model = None
 for model_path in possible_model_paths:
     try:
         print(f"Próba załadowania modelu z: {os.path.abspath(model_path)}")
-        model = tf.keras.models.load_model(
-            model_path,
-            compile=False,
-            safe_mode=False,  
-            custom_objects=None 
-        )
+        model = tf.keras.models.load_model(model_path)
         print(f"Sukces! Model załadowany z: {model_path}")
         break
     except Exception as e:
@@ -66,24 +83,63 @@ train_generator = train_datagen.flow_from_directory(
     train_dir, target_size=(150, 150), batch_size=128, class_mode="categorical"
 )
 
-
-def recognize_ingredient(image_path: str, model: Any, class_labels: Dict[int, str]) -> str:
-    """Rozpoznaj składnik na zdjęciu.
-
-    Args:
-        image_path: Ścieżka do pliku ze zdjęciem
-        model: Model do klasyfikacji
-        class_labels: Słownik etykiet klas
-
-    Returns:
-        Nazwa rozpoznanego składnika
-    """
-    img = load_img(image_path, target_size=(150, 150))
-    img_array = img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction)
-    return class_labels[predicted_class]
+def recognize_ingredient(image_path: str, model: Any, class_labels: Dict[int, str], model_selector: ModelSelector) -> str:
+    """Rozpoznaj składnik na zdjęciu."""
+    try:
+        print("\nDEBUG - Preprocessing steps:")
+        img = load_img(image_path, target_size=(150, 150))
+        print(f"1. Original image shape: {np.array(img).shape}")
+        print(f"   Range: [{np.array(img).min()}, {np.array(img).max()}]")
+        
+        img_array = img_to_array(img)
+        print(f"2. After img_to_array: {img_array.shape}")
+        print(f"   Range: [{img_array.min()}, {img_array.max()}]")
+        print(f"   First pixel RGB: {img_array[0,0]}")
+        
+        # Pobierz funkcję preprocessingu z ModelSelector
+        preprocess_fn = model_selector.get_preprocessing_function()
+        if preprocess_fn is None:
+            # Fallback preprocessing
+            def preprocess_fn(x):
+                x = x.astype('float32')
+                return x / 127.5 - 1
+        
+        # Wykonaj preprocessing i predykcję w jednym kroku
+        processed_image = preprocess_fn(np.expand_dims(img_array.copy(), axis=0))
+        print(f"3. After preprocessing:")
+        print(f"   Shape: {processed_image.shape}")
+        print(f"   Range: [{processed_image.min():.2f}, {processed_image.max():.2f}]")
+        print(f"   First pixel values: {processed_image[0,0,0]}")
+        print(f"   Mean pixel value: {np.mean(processed_image):.2f}")
+        print(f"   Std pixel value: {np.std(processed_image):.2f}")
+        
+        predictions = model.predict(processed_image, verbose=0)
+        
+        predicted_class = np.argmax(predictions[0])
+        
+        # Pokaż top 3 predykcje dla debugowania
+        top_3_idx = np.argsort(predictions[0])[-3:][::-1]
+        print("\nTop 3 predykcje:")
+        for idx in top_3_idx:
+            confidence = predictions[0][idx]
+            class_name = class_labels[idx]
+            print(f"- {class_name}: {confidence:.2%} (idx: {idx})")
+        
+        # Dodaj więcej debugowania
+        print(f"\nDEBUG - Prediction details:")
+        print(f"Batch shape: {processed_image.shape}")
+        print(f"Batch range: [{processed_image.min():.2f}, {processed_image.max():.2f}]")
+        print(f"Prediction shape: {predictions.shape}")
+        print(f"Sum of probabilities: {np.sum(predictions[0]):.4f}")
+        
+        print(f"Model type: {model.name if hasattr(model, 'name') else 'unknown'}")
+        print(f"Input shape: {processed_image.shape}")
+        print(f"Input range: [{processed_image.min():.2f}, {processed_image.max():.2f}]")
+        
+        return class_labels[predicted_class]
+    except Exception as e:
+        print(f"Błąd podczas rozpoznawania składnika: {e}")
+        return "Nie rozpoznano składnika"
 
 
 def search_recipe_with_gpt(
@@ -643,7 +699,6 @@ class RecipeApp(tk.Tk):
                         "★★★★★"[:int(recipe.get("similarity", 3))]
                     )
                 )
-
             tree.pack(fill="both", expand=True, padx=10, pady=10)
             
             def on_select(event):
@@ -908,10 +963,10 @@ class IngredientDialog(tk.Toplevel):
 class MainWindow(tk.Tk):
     """Główne okno aplikacji z menu."""
 
-    def __init__(self, directory: str, model: Any, class_labels: Dict[int, str]) -> None:
+    def __init__(self, directory: str, model_selector: ModelSelector, class_labels: Dict[int, str]) -> None:
         """Inicjalizuj główne okno aplikacji."""
         super().__init__()
-        if model is None:
+        if model_selector.current_model is None:
             messagebox.showerror("Błąd", "Nie udało się załadować modelu!")
             self.destroy()
             return
@@ -919,7 +974,7 @@ class MainWindow(tk.Tk):
         self.current_photo = None
         self.recipe_window: Optional[RecipeApp] = None
         self.directory = directory
-        self.model = model
+        self.model_selector = model_selector
         self.class_labels = class_labels
         self.image_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
         self.recipes_folder = os.path.join(os.getcwd(), "src", "Recipes")
@@ -964,7 +1019,7 @@ class MainWindow(tk.Tk):
 
     def show_ingredient_window(self) -> Optional[tk.Toplevel]:
         """Pokaż okno ze składnikiem."""
-        if self.model is None:
+        if self.model_selector.current_model is None:
             messagebox.showerror("Błąd", "Model nie jest dostępny!")
             return None
         if not self.image_files:
@@ -1009,7 +1064,7 @@ class MainWindow(tk.Tk):
                     
                     img_label.configure(image=photo)
                     
-                    ingredient = recognize_ingredient(image_path, self.model, self.class_labels)
+                    ingredient = recognize_ingredient(image_path, self.model_selector.current_model, self.class_labels, self.model_selector)
                     ingredient_label.config(text=f"Rozpoznany składnik: {ingredient}")
                     
                     prev_btn.config(state=tk.NORMAL if index > 0 else tk.DISABLED)
@@ -1190,14 +1245,14 @@ class MainWindow(tk.Tk):
         history_window.protocol("WM_DELETE_WINDOW", on_history_close)
 
 
-def process_images_in_directory(directory: str, model: Any, class_labels: Dict[int, str]) -> List[Dict[str, str]]:
+def process_images_in_directory(directory: str, model_selector: ModelSelector, class_labels: Dict[int, str]) -> List[Dict[str, str]]:
     """Przetwórz wszystkie obrazy w katalogu."""
     recipes_folder = os.path.join(os.getcwd(), "src", "Recipes")
     os.makedirs(recipes_folder, exist_ok=True)
 
     results: List[Dict[str, str]] = []
 
-    app = MainWindow(directory, model, class_labels)
+    app = MainWindow(directory, model_selector, class_labels)
     app.mainloop()
 
     return results
@@ -1221,7 +1276,35 @@ def update_database_schema() -> None:
 create_database()
 update_database_schema()
 
-directory = os.path.join(os.getcwd(), "src", "Vegetables")
-os.makedirs(directory, exist_ok=True)
-class_labels = {v: k for k, v in train_generator.class_indices.items()}
-results = process_images_in_directory(directory, model, class_labels)
+def main():
+    # Inicjalizacja selektora modeli
+    model_selector = ModelSelector()
+    
+    # Pokaż dostępne modele
+    available_models = model_selector.get_available_models()
+    print("\nDostępne modele:")
+    for i, model_name in enumerate(available_models, 1):
+        print(f"{i}. {model_name}")
+    
+    # Wybór modelu
+    while True:
+        try:
+            choice = int(input("\nWybierz model (podaj numer): ")) - 1
+            if 0 <= choice < len(available_models):
+                selected_model = available_models[choice]
+                break
+            print("Nieprawidłowy numer. Spróbuj ponownie.")
+        except ValueError:
+            print("Wprowadź poprawny numer.")
+    
+    print(f"\nŁadowanie modelu {selected_model}...")
+    model_selector.load_model(selected_model)
+    
+    directory = os.path.join(os.getcwd(), "src", "Vegetables")
+    os.makedirs(directory, exist_ok=True)
+    class_names = model_selector.get_class_names()
+    class_labels = {i: name for i, name in enumerate(class_names)}
+    results = process_images_in_directory(directory, model_selector, class_labels)
+
+if __name__ == "__main__":
+    main()

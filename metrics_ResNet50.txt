@@ -1,0 +1,8 @@
+Metryki dla modelu ResNet50:
+--------------------------------------------------
+Precision: 0.038997214287519455
+Recall: 0.038997214287519455
+AUC: 0.5072055459022522
+Training Time: 5985.967896699905
+Model Size (MB): 0
+Inference Time (s): 1.2790248394012451

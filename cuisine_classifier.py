@@ -11,30 +11,25 @@ class CuisineClassifier:
             "francuska", "śródziemnomorska", "indyjska", "amerykańska"
         ]
         
-        # Używamy gotowego modelu do klasyfikacji tekstu
         self.classifier = pipeline(
             "text-classification",
             model="papluca/xlm-roberta-base-language-detection",
-            top_k=None  # Zwróć wszystkie przewidywania
+            top_k=None  
         )
 
     def predict_cuisine(self, recipe_text: str) -> List[Tuple[str, float]]:
         """Przewiduj typ kuchni na podstawie przepisu."""
         try:
-            # Wykonaj predykcję
             result = self.classifier(recipe_text)
             
-            # Przetwórz wyniki
             predictions = []
-            for item in result[0]:  # result[0] zawiera listę przewidywań
+            for item in result[0]: 
                 cuisine_type = self.map_language_to_cuisine(item['label'])
                 score = float(item['score'])
                 predictions.append((cuisine_type, score))
             
-            # Sortuj według prawdopodobieństwa
             predictions.sort(key=lambda x: x[1], reverse=True)
             
-            # Zwróć top 3 lub wszystkie jeśli jest ich mniej
             return predictions[:3]
 
         except Exception as e:

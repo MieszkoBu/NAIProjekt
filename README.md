@@ -4,32 +4,11 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 
 ## 🌟 Funkcjonalności
 
-1. **Rozpoznawanie składników** 
-   - Model CNN do klasyfikacji zdjęć składników
-   - Obsługa 36 różnych kategorii składników
-   - Możliwość przeglądania i wyboru zdjęć
-
-2. **Generowanie przepisów**
-   - Wykorzystanie OpenAI GPT do generowania przepisów
-   - Dostosowanie do polskich składników i preferencji
-   - Generowanie różnych wariantów przepisu
-
-3. **Rekomendacje przepisów**
-   - Model Sentence Transformers do znajdowania podobnych przepisów
-   - Możliwość dostosowania progu podobieństwa
-   - Wyświetlanie top 3 najbardziej podobnych przepisów
-
-4. **Klasyfikacja typu kuchni**
-   - Model XLM-RoBERTa do klasyfikacji typu kuchni
-   - Rozpoznawanie 8 różnych typów kuchni
-   - Wyświetlanie prawdopodobieństwa dla każdego typu
-
-5. **Dodatkowe funkcje**
-   - Analiza wartości odżywczych
-   - Eksport przepisów do PDF
-   - Historia przepisów z ocenami
-   - Dostosowanie liczby porcji
-   - Sprawdzanie diet
+- Rozpoznawanie składników ze zdjęć przy użyciu modeli głębokiego uczenia (ResNet50, EfficientNetB0, MobileNetV2)
+- Generowanie przepisów kulinarnych z wykorzystaniem OpenAI GPT
+- Rekomendacje podobnych przepisów
+- Interfejs graficzny do łatwej interakcji z aplikacją
+- Historia wygenerowanych przepisów
 
 ## 📱 Przykłady użycia
 
@@ -56,12 +35,31 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 - PyTorch 2.1+
 - Transformers 4.35+
 - Pozostałe zależności w `pyproject.toml`
+- Klucz API OpenAI (w pliku `.env`)
+
 
 ## 🧠 Modele AI
 
-### 1. Model rozpoznawania składników (CNN)
-- Architektura: MobileNetV2
-- Dokładność: 96.48%
+### 1. Model rozpoznawania składników
+
+#### MobileNetV2
+- Dokładność: 89.2%
+- Precyzja: 88.7%
+- Recall: 87.9%
+- AUC: 0.982
+
+#### ResNet50
+- Dokładność: 92.8%
+- Precyzja: 91.9%
+- Recall: 91.5%
+- AUC: 0.989
+
+#### EfficientNetB0
+- Dokładność: 91.5%
+- Precyzja: 90.8%
+- Recall: 90.3%
+- AUC: 0.987
+
 - Obsługiwane składniki: 36 kategorii
 
 ### 2. Model rekomendacji (Sentence Transformers)
@@ -108,7 +106,22 @@ TOKENIZERS_PARALLELISM=true
 
 6. Pobierz model:
    - Opcja A: Pobierz wytrenowany model z [Google Drive](https://drive.google.com/drive/folders/1MobjEblArzMQ2FGiFK2UGwITGrcN5ERs?usp=sharing) i umieść w `models/`
-   - Opcja B: Wytrenuj własny model używając `python train.py` (wymaga pobrania datasetu)
+   - Opcja B: Wytrenuj własne modele (wymaga pobrania datasetu):
+     ```bash
+     # Trenowanie MobileNetV2
+     python train.py
+     
+     # Trenowanie ResNet50
+     python train_resnet.py
+     
+     # Trenowanie EfficientNetB0
+     python train_efficientnet.py
+     ```
+
+     Każdy model zostanie zapisany w katalogu `src/models/` z odpowiednią nazwą:
+     - `trained_model.keras` (MobileNetV2)
+     - `trained_model_resnet.keras` (ResNet50)
+     - `trained_model_efficientnet.keras` (EfficientNetB0)
 
 ## 📸 Przygotowanie zdjęć
 
@@ -170,12 +183,6 @@ NAIProjekt/
 └── tests/                 # Testy jednostkowe
 ```
 
-## 👏 Podziękowania
-
-- OpenAI za model GPT
-- Hugging Face za modele transformers
-- Kaggle za dataset treningowy
-- Społeczność open source za wykorzystane biblioteki
 
 ## 📫 Kontakt
 
@@ -189,7 +196,6 @@ Ten projekt jest objęty licencją MIT - szczegóły w pliku [LICENSE](LICENSE)
 ## ⚠️ Znane problemy
 
 - Program może działać wolniej na komputerach bez GPU
-- Niektóre błędy CUDA można bezpiecznie zignorować
 - Wymagane jest stabilne połączenie internetowe
 
 ## 🙋‍♂️ Wsparcie

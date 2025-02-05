@@ -98,3 +98,39 @@ __pycache__/
 .cache/
 .transformers/
 models/
+
+# Modele i dane
+src/models/*
+!src/models/.gitkeep
+src/archive/train/*
+!src/archive/train/.gitkeep
+src/archive/test/*
+!src/archive/test/.gitkeep
+src/archive/validation/*
+!src/archive/validation/.gitkeep
+
+# Katalogi aplikacji
+src/Vegetables/*
+!src/Vegetables/.gitkeep
+src/Recipes/*
+!src/Recipes/.gitkeep
+
+# Pliki tymczasowe i logi
+*.log
+*.tmp
+.DS_Store
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Wyniki i metryki
+training_history*.png
+training_history*.npy
+*.h5
+*.keras
+saved_model/
+
+# Baza danych
+*.db
+*.sqlite3
