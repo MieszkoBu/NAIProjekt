@@ -1,8 +1,0 @@
-Metryki dla modelu EfficientNetB0:
---------------------------------------------------
-Precision: 0.022284122183918953
-Recall: 0.022284122183918953
-AUC: 0.49806609749794006
-Training Time: 2361.275733232498
-Model Size (MB): 0
-Inference Time (s): 1.0087118943532307
