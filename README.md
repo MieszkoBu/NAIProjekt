@@ -32,22 +32,22 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 ### 1. Model rozpoznawania składników
 
 #### MobileNetV2
-- Dokładność: 89.2%
-- Precyzja: 88.7%
-- Recall: 87.9%
+- Dokładność: 89.69%
+- Precyzja: 92.2%
+- Recall: 88.86%
 - AUC: 0.982
 
 #### ResNet50
-- Dokładność: 92.8%
-- Precyzja: 91.9%
-- Recall: 91.5%
+- Dokładność: 97.49%
+- Precyzja: 97.77%
+- Recall: 97.49%
 - AUC: 0.989
 
 #### EfficientNetB0
-- Dokładność: 91.5%
-- Precyzja: 90.8%
-- Recall: 90.3%
-- AUC: 0.987
+- Dokładność: 94.99%
+- Precyzja: 97.48%
+- Recall: 96.94%
+- AUC: 0.9971
 
 - Obsługiwane składniki: 36 kategorii
 
