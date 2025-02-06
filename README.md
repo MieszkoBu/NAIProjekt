@@ -19,9 +19,6 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 ### Główne okno przepisu
 ![Główne okno](images/image2.png)
 
-### Klasyfikacja typu kuchni
-![Klasyfikacja kuchni](images/image3.png)
-
 ### Historia przepisów
 ![Historia](images/image4.png)
 
@@ -58,11 +55,6 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 - Model: paraphrase-multilingual-MiniLM-L12-v2
 - Funkcje: znajdowanie podobnych przepisów
 - Język: wielojęzyczny (w tym polski)
-
-### 3. Model klasyfikacji kuchni (XLM-RoBERTa)
-- Model: xlm-roberta-base
-- Klasyfikowane kuchnie: polska, włoska, azjatycka, meksykańska, francuska, śródziemnomorska, indyjska, amerykańska
-- Dokładność: wielojęzyczna analiza tekstu
 
 ## 🚀 Instalacja
 

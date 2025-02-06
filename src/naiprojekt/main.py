@@ -23,7 +23,6 @@ import sys
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from naiprojekt.recipe_recommender import RecipeRecommender
-from cuisine_classifier import CuisineClassifier
 from naiprojekt.model_selector import ModelSelector
 
 load_dotenv()
@@ -203,45 +202,6 @@ def search_recipe_with_gpt(
 
     return recipe
 
-
-def download_recipe_image(image_url: str, dish_name: str, output_folder: str) -> Optional[str]:
-    """Pobierz zdjęcie przepisu z URL."""
-    try:
-        if "commons.wikimedia.org" in image_url:
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            response = requests.get(image_url, headers=headers, timeout=10)
-            response.raise_for_status()
-
-            import re
-
-            image_matches = re.findall(
-                r'https://upload\.wikimedia\.org/wikipedia/commons/[^"]+\.(?:jpg|jpeg|png)', response.text
-            )
-            if image_matches:
-                image_url = image_matches[0]
-                print(f"Znaleziono bezpośredni link do obrazu: {image_url}")
-            else:
-                print("Nie znaleziono bezpośredniego linku do obrazu na stronie Wikimedia")
-                return None
-
-        response = requests.get(image_url, headers=headers, timeout=10)
-        response.raise_for_status()
-
-        content_type = response.headers.get("content-type", "")
-        if not content_type.startswith("image/"):
-            print(f"URL nie prowadzi do obrazu: {content_type}")
-            return None
-
-        img = Image.open(BytesIO(response.content))
-        output_path = os.path.join(output_folder, f"{dish_name}.jpg")
-        img.save(output_path)
-        print(f"Zapisano zdjęcie w: {output_path}")
-        return output_path
-    except Exception as e:
-        print(f"Błąd podczas pobierania zdjęcia: {e}")
-        return None
-
-
 def save_recipe_to_file(ingredient: str, recipe: str, output_folder: str) -> str:
     """Zapisz przepis do pliku tekstowego."""
     os.makedirs(output_folder, exist_ok=True)
@@ -385,8 +345,6 @@ class RecipeApp(tk.Tk):
         self.parent = parent
         self.recipe_id = recipe_id
 
-        self.cuisine_classifier = CuisineClassifier()
-
         window_width = 800
         window_height = 600
         screen_width = self.winfo_screenwidth()
@@ -449,15 +407,6 @@ class RecipeApp(tk.Tk):
             height=2
         )
         self.recommend_btn.pack(side="left", padx=5)
-
-        self.cuisine_btn = tk.Button(
-            button_frame,
-            text="Typ kuchni",
-            command=self.show_cuisine_type,
-            width=20,
-            height=2
-        )
-        self.cuisine_btn.pack(side="left", padx=5)
 
         rating_frame = tk.Frame(main_frame)
         rating_frame.pack(fill="x", pady=5)
@@ -716,28 +665,6 @@ class RecipeApp(tk.Tk):
                 recommend_window.destroy()
                 
             tree.bind("<Double-1>", on_select)
-
-    def show_cuisine_type(self) -> None:
-        """Pokaż typ kuchni dla przepisu."""
-        predictions = self.cuisine_classifier.predict_cuisine(self.recipe)
-        
-        cuisine_window = tk.Toplevel(self)
-        cuisine_window.title("Klasyfikacja typu kuchni")
-        cuisine_window.geometry("400x300")
-        
-        tk.Label(
-            cuisine_window,
-            text="Prawdopodobieństwo typu kuchni:",
-            font=("Arial", 12, "bold")
-        ).pack(pady=10)
-        
-        for cuisine, prob in predictions[:3]:
-            percentage = f"{prob * 100:.1f}%"
-            tk.Label(
-                cuisine_window,
-                text=f"{cuisine.title()}: {percentage}",
-                font=("Arial", 11)
-            ).pack(pady=5)
 
 
 def save_to_database(recipe: Dict[str, Any]) -> Optional[int]:
