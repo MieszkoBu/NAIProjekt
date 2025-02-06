@@ -180,20 +180,20 @@ Umieść zdjęcia w formacie JPG/PNG w katalogu `Vegetables/`. Minimalna rozdzie
 
 ```
 NAIProjekt/
-├── archive/                     # Zbiór danych do treningu i testów
-│   ├── test/                   # Dane testowe (36 klas warzyw/owoców)
-│   ├── train/                  # Dane treningowe
-│   └── validation/             # Dane walidacyjne
+├── archive/                    
+│   ├── test/                 
+│   ├── train/                
+│   └── validation/             
 │
 ├── reports/                    
 ├── src/
 │   ├── models/               
 │   ├── naiprojekt/            
 │   │    ├── __init__.py
-│   │    ├── main.py            # Główny skrypt aplikacji
-│   │    ├── model_selector.py  # Wybór i zarządzanie modelami
-│   │    ├── test.py           # Testy i ewaluacja modeli
-│   │    └──generate_reports.py # Generowanie raportów
+│   │    ├── main.py           
+│   │    ├── model_selector.py  
+│   │    ├── test.py           
+│   │    └──generate_reports.py 
 │   │
 │   ├── Recipes/
 │   └── Vegetables/
