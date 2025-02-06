@@ -8,7 +8,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam
-from model_metrics import ModelMetrics
+from naiprojekt.model_metrics import ModelMetrics
 import time
 import numpy as np
 
@@ -20,8 +20,8 @@ def preprocess_image(image):
 def train_efficientnet_model():
     """Trenuj model EfficientNetB0."""
     # Przygotuj ścieżki
-    train_dir = os.path.join(os.getcwd(), "src", "archive", "train")
-    test_dir = os.path.join(os.getcwd(), "src", "archive", "test")
+    train_dir = os.path.join("archive", "train")
+    test_dir = os.path.join("archive", "test")
     
     # Przygotuj generatory danych
     train_datagen = ImageDataGenerator(
