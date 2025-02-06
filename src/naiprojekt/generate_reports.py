@@ -121,11 +121,11 @@ def load_model(model_path: str, model_name: str):
 def main():
     """Główna funkcja generująca raporty."""
     # Utwórz katalog na raporty
-    reports_dir = os.path.join(os.getcwd(), "reports")
+    reports_dir = os.path.join("reports")
     os.makedirs(reports_dir, exist_ok=True)
     
     # Ścieżka do danych testowych
-    test_dir = os.path.join(os.getcwd(), "src", "archive", "test")
+    test_dir = os.path.join("archive", "test")
     
     # Lista modeli do przetestowania
     models = {

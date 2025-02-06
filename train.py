@@ -12,9 +12,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.regularizers import l2
 
-train_dir = os.path.join(os.getcwd(), "src", "archive", "train")
-validation_dir = os.path.join(os.getcwd(), "src", "archive", "validation")
-test_dir = os.path.join(os.getcwd(), "src", "archive", "test")
+train_dir = os.path.join("archive", "train")
+validation_dir = os.path.join("archive", "validation")
+test_dir = os.path.join("archive", "test")
 
 train_datagen = ImageDataGenerator(
     rescale=1.0 / 255,
@@ -73,7 +73,7 @@ history = model.fit(
     callbacks=[early_stopping, reduce_lr],
 )
 
-model_save_path = os.path.join(os.getcwd(), "models", "trained_model.keras")
+model_save_path = os.path.join(os.getcwd(), "src", "models", "trained_model.keras")
 os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
 model.save(model_save_path)
 

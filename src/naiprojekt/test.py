@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img
 import random
+import sys
 
 # Definicje funkcji preprocessingu
 preprocessing_functions = {
@@ -153,7 +154,7 @@ for model_name, model in loaded_models.items():
             preprocessing_function=preprocessing_functions[model_type]
         )
         test_generator = test_datagen.flow_from_directory(
-            os.path.join(os.getcwd(), "src", "archive", "test"),
+            os.path.join("archive", "test"),
             target_size=(150, 150),
             batch_size=32,
             class_mode="categorical",
@@ -207,7 +208,7 @@ plt.show()
 # Pobierz 10 losowych próbek ze zbioru testowego
 print("\nPrzygotowywanie losowych próbek do testów...")
 # Załaduj bezpośrednio obrazy z katalogu testowego
-test_dir = os.path.join(os.getcwd(), "src", "archive", "test")
+test_dir = os.path.join("archive", "test")
 test_samples = []
 test_labels = []
 class_dirs = sorted(os.listdir(test_dir))

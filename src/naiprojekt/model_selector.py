@@ -93,6 +93,11 @@ class ModelSelector:
         return predictions[0]
 
     def get_class_names(self):
-        """Zwraca nazwy klas."""
-        class_names = sorted(os.listdir(os.path.join("src", "archive", "test")))
-        return class_names 
+        """Pobierz nazwy klas z katalogu testowego."""
+        try:
+            # Zmień ścieżkę z "src/archive/test" na "archive/test"
+            class_names = sorted(os.listdir(os.path.join("archive", "test")))
+            return class_names
+        except Exception as e:
+            print(f"Błąd podczas pobierania nazw klas: {e}")
+            return [] 

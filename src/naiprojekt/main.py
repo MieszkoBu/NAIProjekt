@@ -76,7 +76,7 @@ if model is None:
         print(f"- {os.path.abspath(path)}")
     sys.exit(1)  
 
-train_dir = os.path.join(os.getcwd(), "src", "archive", "train")
+train_dir = os.path.join("archive", "train")
 train_datagen = ImageDataGenerator(rescale=1.0 / 255)
 
 train_generator = train_datagen.flow_from_directory(
