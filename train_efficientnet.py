@@ -82,7 +82,7 @@ def train_efficientnet_model():
 
     # Kompiluj model
     model.compile(
-        optimizer=Adam(learning_rate=0.0001),  # Większy learning rate
+        optimizer=Adam(learning_rate=0.0001),  
         loss='categorical_crossentropy',
         metrics=['accuracy', 'Precision', 'Recall', 'AUC']
     )
