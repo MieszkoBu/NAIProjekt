@@ -10,7 +10,7 @@ requires-python = ">=3.9,<3.11"
 dependencies = [
     # Core ML & Image Processing
     "tensorflow==2.12.0",
-    "tensorflow-intel==2.12.0",  # Wymagane dla TensorFlow na Windows
+    "tensorflow-intel==2.12.0", 
     "numpy==1.23.5",
     "scikit-learn==1.6.1",
     "opencv-python==4.11.0.86",
