@@ -24,6 +24,7 @@ Generator przepisów kulinarnych wykorzystujący sztuczną inteligencję do rozp
 
 ## 💻 Wymagania
 
+- Wersja Pythona >=3.9,<3.11
 - Klucz API OpenAI (w pliku `.env`)
 
 
